@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>棕榈油看板</title>
+<style>
+  :root {
+    --navy: #1b2a4a;
+    --navy-soft: #2f4370;
+    --ink: #1f2937;
+    --muted: #64748b;
+    --line: #e2e8f0;
+    --bg: #ffffff;
+    --bg-soft: #f6f8fb;
+    --up: #c0392b;
+    --down: #1f7a4d;
+    --warn: #b7791f;
+    --err: #b03030;
+    --ok: #1f7a4d;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink); }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", "Helvetica Neue", Arial, sans-serif;
+    font-size: 15px;
+    line-height: 1.5;
+    -webkit-text-size-adjust: 100%;
+  }
+  #fullCapture { max-width: 820px; margin: 0 auto; padding: 16px 16px 8px; }
+  header h1 {
+    margin: 4px 0 6px;
+    font-size: 20px;
+    color: var(--navy);
+    letter-spacing: 0.5px;
+  }
+  .meta-line {
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+  .status-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 12px;
+    align-items: center;
+    font-size: 13px;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: var(--bg-soft);
+    border: 1px solid var(--line);
+    margin-bottom: 10px;
+  }
+  .badge { padding: 1px 8px; border-radius: 999px; font-size: 12px; color: #fff; }
+  .badge.ok { background: var(--ok); }
+  .badge.warn { background: var(--warn); }
+  .badge.err { background: var(--err); }
+  .badge.neutral { background: #94a3b8; }
+  .actions { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+  .actions button {
+    appearance: none;
+    border: 1px solid var(--navy-soft);
+    background: #fff;
+    color: var(--navy);
+    padding: 7px 12px;
+    border-radius: 8px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .actions button:active { background: var(--bg-soft); }
+  .actions button.primary { background: var(--navy); color: #fff; border-color: var(--navy); }
+  section { margin-bottom: 18px; }
+  section h2 {
+    font-size: 15px;
+    color: var(--navy);
+    margin: 0 0 8px;
+    padding-left: 8px;
+    border-left: 3px solid var(--navy);
+  }
+  .cards { display: grid; grid-template-columns: 1fr; gap: 10px; }
+  @media (min-width: 640px) { .cards { grid-template-columns: repeat(3, 1fr); } }
+  .card {
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 12px;
+    background: #fff;
+  }
+  .card .title { font-size: 13px; color: var(--navy); font-weight: 600; }
+  .card .contract { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .card .price {
+    font-size: 24px;
+    font-weight: 700;
+    margin: 8px 0 2px;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+  .card .price.na { color: #94a3b8; font-size: 16px; font-weight: 500; }
+  .card .chg { font-size: 13px; font-variant-numeric: tabular-nums; }
+  .chg.up { color: var(--up); }
+  .chg.down { color: var(--down); }
+  .chg.flat { color: var(--muted); }
+  .card .rows { margin-top: 8px; font-size: 12px; color: var(--muted); }
+  .card .rows div { display: flex; justify-content: space-between; gap: 8px; padding: 1px 0; }
+  .card .rows span:last-child { color: #475569; text-align: right; word-break: break-all; }
+  .tag {
+    display: inline-block;
+    font-size: 11px;
+    padding: 1px 6px;
+    border-radius: 4px;
+    background: var(--bg-soft);
+    color: var(--navy-soft);
+    border: 1px solid var(--line);
+    margin-top: 6px;
+  }
+  .tag.err { color: var(--err); border-color: #f0d0d0; background: #fdf3f3; }
+  .tag.warn { color: var(--warn); border-color: #f0e2c8; background: #fdf9f0; }
+  .chart-block { border: 1px solid var(--line); border-radius: 10px; padding: 10px; margin-bottom: 10px; }
+  .chart-head { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-bottom: 4px; }
+  canvas.spark { width: 100%; height: 110px; display: block; }
+  table.future { width: 100%; border-collapse: collapse; font-size: 13px; }
+  table.future th, table.future td {
+    text-align: right;
+    padding: 6px 4px;
+    border-bottom: 1px solid var(--line);
+    font-variant-numeric: tabular-nums;
+  }
+  table.future th:first-child, table.future td:first-child { text-align: left; }
+  table.future .na { color: #94a3b8; }
+  ul.fund { margin: 0; padding-left: 18px; font-size: 13px; color: var(--muted); }
+  ul.fund li { margin: 3px 0; }
+  ul.fund .st { color: var(--warn); }
+  .screen-note {
+    font-size: 11px;
+    color: #94a3b8;
+    padding-top: 8px;
+    border-top: 1px solid var(--line);
+    margin-top: 10px;
+  }
+  footer#pageFooter {
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted);
+    padding: 14px 0 22px;
+    border-top: 1px solid var(--line);
+    margin-top: 8px;
+  }
+  .loading { padding: 24px 0; text-align: center; color: var(--muted); font-size: 14px; }
+  .err-box {
+    padding: 10px 12px; border-radius: 8px; background: #fdf3f3;
+    border: 1px solid #f0d0d0; color: var(--err); font-size: 13px;
+    margin-bottom: 12px;
+  }
+  .err-box button {
+    margin-left: 8px; font-size: 12px; padding: 3px 8px;
+    border-radius: 6px; border: 1px solid var(--err); background: #fff; color: var(--err);
+  }
+  .stale-flag {
+    display: inline-block; background: #b03030; color: #fff;
+    font-size: 11px; padding: 1px 8px; border-radius: 4px; margin-left: 6px;
+  }
+</style>
+</head>
+<body>
+
+<div id="fullCapture">
+
+  <header>
+    <h1>棕榈油看板</h1>
+    <div class="meta-line" id="metaLine">正在加载云端数据…</div>
+    <div class="status-bar" id="statusBar">
+      <span class="badge neutral">加载中</span>
+    </div>
+    <div class="actions">
+      <button id="btnRefresh" class="primary" type="button">刷新数据</button>
+      <button id="btnExportScreen" type="button">导出单屏图</button>
+      <button id="btnExportFull" type="button">导出长图</button>
+      <button id="btnImport" type="button">导入本地 JSON</button>
+      <input id="fileInput" type="file" accept="application/json,.json" style="display:none">
+    </div>
+  </header>
+
+  <main>
+    <div id="screenCapture">
+      <section id="coreSection">
+        <h2>核心行情</h2>
+        <div class="cards" id="coreCards">
+          <div class="loading">正在加载…</div>
+        </div>
+      </section>
+
+      <section id="futureSection">
+        <h2>关键未来月份合约</h2>
+        <div id="futureTables">
+          <div class="loading">正在加载…</div>
+        </div>
+      </section>
+
+      <div class="screen-note" id="screenNote"></div>
+    </div>
+
+    <section id="trendSection">
+      <h2>主力合约趋势（近 30 个交易日）</h2>
+      <div id="trendCharts">
+        <div class="loading">正在加载…</div>
+      </div>
+    </section>
+
+    <section id="fundamentalSection">
+      <h2>基本面扩展（后续迭代）</h2>
+      <div id="fundamentalList">
+        <div class="loading">正在加载…</div>
+      </div>
+    </section>
+  </main>
+
+  <footer id="pageFooter">该看板数据由wzy收集整理，仅供辅助参考</footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script>
+(function () {
+  "use strict";
+
+  var DATA_BASE = "https://raw.githubusercontent.com/wk4cn-debug/palm-oil-dashboard/main/data";
+  var REFRESH_INTERVAL_MS = 15 * 60 * 1000;
+  var DISCLAIMER = "该看板数据由wzy收集整理，仅供辅助参考";
+
+  var state = {
+    data: null,
+    lastLoadedAt: null,
+    lastError: null
+  };
+
+  // ---------- 数据加载 ----------
+
+  function loadViaScript() {
+    return new Promise(function (resolve, reject) {
+      var s = document.createElement("script");
+      s.src = DATA_BASE + "/latest.js?t=" + Date.now();
+      s.onload = function () {
+        var d = window.__PALM_DATA__;
+        s.remove();
+        if (d) { resolve(d); } else { reject(new Error("latest.js 未包含数据")); }
+      };
+      s.onerror = function () {
+        s.remove();
+        reject(new Error("latest.js 加载失败"));
+      };
+      document.head.appendChild(s);
+    });
+  }
+
+  function loadViaFetch() {
+    return fetch(DATA_BASE + "/latest.json?t=" + Date.now(), { cache: "no-store" })
+      .then(function (res) {
+        if (!res.ok) { throw new Error("HTTP " + res.status); }
+        return res.json();
+      });
+  }
+
+  function loadData() {
+    return loadViaScript()
+      .catch(function () { return loadViaFetch(); });
+  }
+
+  // ---------- 工具 ----------
+
+  function esc(s) {
+    if (s === null || s === undefined) { return ""; }
+    return String(s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function fmtNum(v, digits) {
+    if (v === null || v === undefined || isNaN(v)) { return "—"; }
+    var d = (digits === undefined) ? 2 : digits;
+    return Number(v).toFixed(d);
+  }
+
+  function fmtChange(v) {
+    if (v === null || v === undefined || isNaN(v)) { return "—"; }
+    return (v > 0 ? "+" : "") + Number(v).toFixed(2);
+  }
+
+  function fmtChangePct(v) {
+    if (v === null || v === undefined || isNaN(v)) { return "—"; }
+    return (v > 0 ? "+" : "") + Number(v).toFixed(2) + "%";
+  }
+
+  function chgClass(v) {
+    if (v === null || v === undefined || isNaN(v) || v === 0) { return "flat"; }
+    return v > 0 ? "up" : "down";
+  }
+
+  function fmtDateTime(iso) {
+    if (!iso) { return "—"; }
+    var d = new Date(iso);
+    if (isNaN(d.getTime())) { return esc(iso); }
+    var p = function (n) { return n < 10 ? "0" + n : "" + n; };
+    return d.getFullYear() + "-" + p(d.getMonth() + 1) + "-" + p(d.getDate())
+      + " " + p(d.getHours()) + ":" + p(d.getMinutes());
+  }
+
+  function isStale(item) {
+    if (!item) { return true; }
+    var st = item.status || "";
+    return st.indexOf("过期") >= 0 || st.indexOf("异常") >= 0 || st.indexOf("暂不可用") >= 0;
+  }
+
+  // ---------- 渲染 ----------
+
+  function renderStatus(data) {
+    var bar = document.getElementById("statusBar");
+    var status = data.market_status || "未知";
+    var cls = status === "正常" ? "ok" : (status === "部分异常" ? "warn" : "err");
+    var html = '<span class="badge ' + cls + '">' + esc(status) + "</span>";
+    var abn = data.abnormal_items || [];
+    if (abn.length) {
+      html += '<span>异常指标：' + abn.map(esc).join("；") + "</span>";
+    } else {
+      html += "<span>异常指标：无</span>";
+    }
+    bar.innerHTML = html;
+
+    var meta = document.getElementById("metaLine");
+    meta.innerHTML =
+      "看板生成时间：" + esc(fmtDateTime(data.dashboard_generated_at)) +
+      "　|　实际采集时间：" + esc(fmtDateTime(data.actual_collected_at)) +
+      "　|　交易日期：" + esc(data.trade_date || "—");
+  }
+
+  function renderCoreCards(data) {
+    var wrap = document.getElementById("coreCards");
+    var items = data.items || {};
+    var order = ["P", "FCPO", "Y"];
+    var keys = order.filter(function (k) { return items[k]; });
+    Object.keys(items).forEach(function (k) {
+      if (keys.indexOf(k) < 0) { keys.push(k); }
+    });
+
+    if (!keys.length) {
+      wrap.innerHTML = '<div class="loading">暂无行情数据</div>';
+      return;
+    }
+
+    var html = "";
+    keys.forEach(function (k) {
+      var it = items[k] || {};
+      var hasPrice = it.price !== null && it.price !== undefined && !isNaN(it.price);
+      var stale = isStale(it);
+      var tagCls = stale ? "err" : "";
+      var priceHtml = hasPrice
+        ? '<div class="price">' + esc(fmtNum(it.price, 2)) + "</div>"
+        : '<div class="price na">暂不可用</div>';
+
+      var chgHtml = "";
+      if (hasPrice) {
+        var c = chgClass(it.change);
+        chgHtml = '<div class="chg ' + c + '">'
+          + esc(fmtChange(it.change)) + "　" + esc(fmtChangePct(it.change_pct))
+          + "</div>";
+      }
+
+      html += '<div class="card">'
+        + '<div class="title">' + esc(it.short_name || it.name || k) + "</div>"
+        + '<div class="contract">' + esc(it.contract || "合约代码待确认") + "</div>"
+        + priceHtml
+        + chgHtml
+        + '<div class="rows">'
+        + "<div><span>行情时间</span><span>" + esc(it.quote_time || "—") + "</span></div>"
+        + "<div><span>交易日期</span><span>" + esc(it.trade_date || "—") + "</span></div>"
+        + "<div><span>主力状态</span><span>" + esc(it.contract_status || "—") + "</span></div>"
+        + "<div><span>数据来源</span><span>" + esc(it.source || "—") + "</span></div>"
+        + "<div><span>数据状态</span><span>" + esc(it.status || "—") + "</span></div>"
+        + "</div>"
+        + '<span class="tag ' + tagCls + '">' + esc(it.status || "状态未知") + "</span>"
+        + "</div>";
+    });
+    wrap.innerHTML = html;
+  }
+
+  function renderFutureTables(data) {
+    var wrap = document.getElementById("futureTables");
+    var items = data.items || {};
+    var keys = Object.keys(items).filter(function (k) {
+      var fc = items[k] && items[k].future_contracts;
+      return fc && fc.length;
+    });
+
+    if (!keys.length) {
+      wrap.innerHTML = '<div class="loading">暂无可展示的未来月份合约</div>';
+      return;
+    }
+
+    var html = "";
+    keys.forEach(function (k) {
+      var it = items[k];
+      html += '<div class="chart-block">';
+      html += '<div class="chart-head"><span>' + esc(it.short_name || it.name || k)
+        + '</span><span>仅展示尚未到期且有实际可验证报价的合约</span></div>';
+      html += "<table class='future'><thead><tr>"
+        + "<th>合约月份</th><th>合约代码</th><th>最新价</th>"
+        + "<th>涨跌</th><th>涨跌幅</th><th>行情时间</th><th>状态</th>"
+        + "</tr></thead><tbody>";
+
+      it.future_contracts.forEach(function (row) {
+        var na = row.price === null || row.price === undefined || isNaN(row.price);
+        var cls = na ? " class='na'" : "";
+        html += "<tr" + cls + ">"
+          + "<td>" + esc(row.month) + " 月</td>"
+          + "<td>" + esc(row.contract || "—") + "</td>"
+          + "<td>" + (na ? "暂不可用" : esc(fmtNum(row.price, 2))) + "</td>"
+          + "<td>" + (na ? "—" : esc(fmtChange(row.change))) + "</td>"
+          + "<td>" + (na ? "—" : esc(fmtChangePct(row.change_pct))) + "</td>"
+          + "<td>" + esc(row.quote_time || "—") + "</td>"
+          + "<td>" + esc(row.status || "—") + "</td>"
+          + "</tr>";
+      });
+
+      html += "</tbody></table></div>";
+    });
+    wrap.innerHTML = html;
+  }
+
+  function drawSparkline(canvas, points) {
+    var dpr = window.devicePixelRatio || 1;
+    var w = canvas.clientWidth || 300;
+    var h = canvas.clientHeight || 110;
+    canvas.width = Math.round(w * dpr);
+    canvas.height = Math.round(h * dpr);
+    var ctx = canvas.getContext("2d");
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, w, h);
+
+    if (!points || points.length < 2) {
+      ctx.fillStyle = "#94a3b8";
+      ctx.font = "13px sans-serif";
+      ctx.fillText("历史数据不足，如实展示不补点", 10, h / 2);
+      return;
+    }
+
+    var vals = points.map(function (p) { return p.close; })
+      .filter(function (v) { return v !== null && v !== undefined && !isNaN(v); });
+    if (vals.length < 2) {
+      ctx.fillStyle = "#94a3b8";
+      ctx.font = "13px sans-serif";
+      ctx.fillText("历史数据不足，如实展示不补点", 10, h / 2);
+      return;
+    }
+
+    var min = Math.min.apply(null, vals);
+    var max = Math.max.apply(null, vals);
+    var range = (max - min) || 1;
+    var padL = 8, padR = 8, padT = 14, padB = 16;
+    var n = points.length;
+
+    function x(i) { return padL + (w - padL - padR) * i / (n - 1); }
+    function y(v) { return padT + (h - padT - padB) * (1 - (v - min) / range); }
+
+    // 网格
+    ctx.strokeStyle = "#eef2f7";
+    ctx.lineWidth = 1;
+    for (var g = 0; g <= 3; g++) {
+      var gy = padT + (h - padT - padB) * g / 3;
+      ctx.beginPath();
+      ctx.moveTo(padL, gy);
+      ctx.lineTo(w - padR, gy);
+      ctx.stroke();
+    }
+
+    // 折线
+    var up = points[n - 1].close >= points[0].close;
+    var color = up ? "#c0392b" : "#1f7a4d";
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    points.forEach(function (p, i) {
+      var px = x(i), py = y(p.close);
+      if (i === 0) { ctx.moveTo(px, py); } else { ctx.lineTo(px, py); }
+    });
+    ctx.stroke();
+
+    // 最新点
+    var lx = x(n - 1), ly = y(points[n - 1].close);
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.arc(lx, ly, 3, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 极值标注
+    ctx.fillStyle = "#94a3b8";
+    ctx.font = "11px sans-serif";
+    ctx.fillText(max.toFixed(2), padL, 10);
+    ctx.fillText(min.toFixed(2), padL, h - 4);
+    ctx.fillText(points[0].date, padL, h - 4 - 12);
+    ctx.textAlign = "right";
+    ctx.fillText(points[n - 1].date, w - padR, h - 4 - 12);
+    ctx.textAlign = "left";
+  }
+
+  function renderTrendCharts(data) {
+    var wrap = document.getElementById("trendCharts");
+    var items = data.items || {};
+    var keys = Object.keys(items);
+
+    if (!keys.length) {
+      wrap.innerHTML = '<div class="loading">暂无趋势数据</div>';
+      return;
+    }
+
+    var html = "";
+    keys.forEach(function (k, idx) {
+      var it = items[k] || {};
+      var hist = it.history || [];
+      var rangeText = hist.length
+        ? (hist[0].date + " 至 " + hist[hist.length - 1].date + "（" + hist.length + " 个交易日）")
+        : "无历史数据";
+      html += '<div class="chart-block">'
+        + '<div class="chart-head"><span>' + esc(it.short_name || it.name || k)
+        + '　' + esc(it.contract || "") + "</span><span>" + esc(rangeText) + "</span></div>"
+        + '<canvas class="spark" id="spark-' + esc(k) + '"></canvas>'
+        + '<div class="chart-head" style="margin-top:6px"><span>'
+        + esc(it.contract_status || "")
+        + "</span><span>来源：" + esc(it.source || "—") + "</span></div>"
+        + "</div>";
+    });
+    wrap.innerHTML = html;
+
+    keys.forEach(function (k) {
+      var it = items[k] || {};
+      var canvas = document.getElementById("spark-" + k);
+      if (canvas) {
+        drawSparkline(canvas, it.history || []);
+      }
+    });
+  }
+
+  function renderFundamentals(data) {
+    var wrap = document.getElementById("fundamentalList");
+    var f = data.fundamentals || {};
+    var keys = Object.keys(f);
+    if (!keys.length) {
+      wrap.innerHTML = '<ul class="fund"><li>基本面指标：<span class="st">未接入</span></li></ul>';
+      return;
+    }
+    var html = '<ul class="fund">';
+    keys.forEach(function (k) {
+      var item = f[k] || {};
+      html += "<li>" + esc(item.label || k) + "：<span class='st'>"
+        + esc(item.status || "未接入") + "</span>"
+        + (item.note ? "（" + esc(item.note) + "）" : "")
+        + "</li>";
+    });
+    html += "</ul>";
+    wrap.innerHTML = html;
+  }
+
+  function renderScreenNote(data) {
+    var note = document.getElementById("screenNote");
+    var srcList = (data.source_list || []).join("；");
+    var parts = [];
+    parts.push("数据日期：" + (data.trade_date || "—"));
+    parts.push("来源：" + (srcList || "—"));
+    parts.push(DISCLAIMER);
+    note.textContent = parts.join("　|　");
+  }
+
+  function renderError(message) {
+    var bar = document.getElementById("statusBar");
+    bar.innerHTML = '<span class="badge err">采集异常</span><span>'
+      + esc(message) + "</span>";
+    var box = document.getElementById("coreCards");
+    box.innerHTML = '<div class="err-box">云端数据加载失败：' + esc(message)
+      + '。可点击“刷新数据”重试，或点击“导入本地 JSON”手动加载 data/latest.json。'
+      + '<button type="button" id="btnImport2">导入本地 JSON</button></div>';
+    var b2 = document.getElementById("btnImport2");
+    if (b2) {
+      b2.addEventListener("click", function () {
+        document.getElementById("fileInput").click();
+      });
+    }
+  }
+
+  function render(data) {
+    state.data = data;
+    state.lastLoadedAt = new Date();
+    state.lastError = null;
+    renderStatus(data);
+    renderCoreCards(data);
+    renderFutureTables(data);
+    renderTrendCharts(data);
+    renderFundamentals(data);
+    renderScreenNote(data);
+  }
+
+  function refresh() {
+    var btn = document.getElementById("btnRefresh");
+    btn.disabled = true;
+    btn.textContent = "刷新中…";
+    loadData()
+      .then(function (data) {
+        if (!data || !data.items) { throw new Error("数据结构不完整"); }
+        render(data);
+      })
+      .catch(function (err) {
+        state.lastError = err;
+        renderError(err.message || String(err));
+      })
+      .finally(function () {
+        btn.disabled = false;
+        btn.textContent = "刷新数据";
+      });
+  }
+
+  // ---------- 导出 ----------
+
+  function withExportBanner(el, cb) {
+    var banner = document.createElement("div");
+    banner.style.cssText = "font-size:12px;color:#1b2a4a;background:#f6f8fb;"
+      + "border:1px solid #e2e8f0;border-radius:8px;padding:6px 10px;margin-bottom:8px;";
+    var gen = state.data ? fmtDateTime(state.data.dashboard_generated_at) : "—";
+    var st = state.data ? (state.data.market_status || "未知") : "未知";
+    var stale = state.data && state.data.market_status !== "正常";
+    banner.innerHTML = "导出生成时间：" + esc(gen) + "　|　数据状态："
+      + "<strong" + (stale ? ' style="color:#b03030"' : "") + ">" + esc(st) + "</strong>"
+      + (stale ? '　<strong style="color:#b03030">数据缺失或异常，请谨慎使用</strong>' : "");
+    el.insertBefore(banner, el.firstChild);
+    cb(function () {
+      el.removeChild(banner);
+    });
+  }
+
+  function exportNode(node, filename, done) {
+    if (typeof html2canvas !== "function") {
+      alert("导出组件未加载（html2canvas）。请检查网络后重试。");
+      if (done) { done(); }
+      return;
+    }
+    html2canvas(node, {
+      backgroundColor: "#ffffff",
+      scale: Math.min(2, window.devicePixelRatio || 1) * 1.5,
+      useCORS: true,
+      logging: false
+    }).then(function (canvas) {
+      var link = document.createElement("a");
+      link.download = filename;
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+      if (done) { done(); }
+    }).catch(function (err) {
+      alert("导出失败：" + (err && err.message ? err.message : err));
+      if (done) { done(); }
+    });
+  }
+
+  function stamp() {
+    var d = new Date();
+    var p = function (n) { return n < 10 ? "0" + n : "" + n; };
+    return d.getFullYear() + p(d.getMonth() + 1) + p(d.getDate())
+      + "-" + p(d.getHours()) + p(d.getMinutes());
+  }
+
+  function exportScreen() {
+    var node = document.getElementById("screenCapture");
+    withExportBanner(node, function (cleanup) {
+      exportNode(node, "棕榈油看板-单屏-" + stamp() + ".png", cleanup);
+    });
+  }
+
+  function exportFull() {
+    var node = document.getElementById("fullCapture");
+    withExportBanner(node, function (cleanup) {
+      exportNode(node, "棕榈油看板-完整-" + stamp() + ".png", cleanup);
+    });
+  }
+
+  // ---------- 本地 JSON 导入 ----------
+
+  function setupImport() {
+    var input = document.getElementById("fileInput");
+    document.getElementById("btnImport").addEventListener("click", function () {
+      input.click();
+    });
+    input.addEventListener("change", function () {
+      var file = input.files && input.files[0];
+      if (!file) { return; }
+      var reader = new FileReader();
+      reader.onload = function () {
+        try {
+          var data = JSON.parse(reader.result);
+          if (!data || !data.items) { throw new Error("数据结构不完整"); }
+          render(data);
+        } catch (err) {
+          alert("本地 JSON 解析失败：" + (err.message || err));
+        }
+      };
+      reader.readAsText(file, "utf-8");
+      input.value = "";
+    });
+  }
+
+  // ---------- 启动 ----------
+
+  function boot() {
+    document.getElementById("btnRefresh").addEventListener("click", refresh);
+    document.getElementById("btnExportScreen").addEventListener("click", exportScreen);
+    document.getElementById("btnExportFull").addEventListener("click", exportFull);
+    setupImport();
+
+    refresh();
+    setInterval(refresh, REFRESH_INTERVAL_MS);
+    window.addEventListener("resize", function () {
+      if (state.data) { renderTrendCharts(state.data); }
+    });
+  }
+
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", boot);
+  } else {
+    boot();
+  }
+})();
+</script>
+</body>
+</html>
