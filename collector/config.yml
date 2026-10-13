@@ -1,1 +1,48 @@
+# 棕榈油看板 · 采集配置
+# 规则：只有经过人工验证的数据源才可置为 enabled: true
+# 未验证 / 不稳定的数据源保持 false，页面会显示“暂不可用”，不使用模拟数据
 
+settings:
+  timezone: "Asia/Shanghai"
+  history_days: 30
+  request_timeout: 25
+  user_agent: "Mozilla/5.0 (Linux; Android 13) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/122.0 Mobile Safari/537.36"
+
+# 各品种配置
+symbols:
+  P:
+    name: "大连商品交易所棕榈油期货"
+    short_name: "DCE 棕榈油 P"
+    exchange: "DCE"
+    enabled: true
+    sina_main: "P0"          # 新浪主力连续代码
+    sina_prefix: "P"          # 用于生成具体月份合约代码，如 P2701
+    future_months: ["01", "05", "09", "11"]
+  Y:
+    name: "大连商品交易所豆油期货"
+    short_name: "DCE 豆油 Y"
+    exchange: "DCE"
+    enabled: true
+    sina_main: "Y0"
+    sina_prefix: "Y"
+    future_months: ["01", "05", "09"]
+  FCPO:
+    name: "马来西亚棕榈油期货"
+    short_name: "BMD FCPO"
+    exchange: "BMD"
+    # 免费稳定数据源尚未验证，默认关闭，页面显示“暂不可用”
+    enabled: false
+    future_months: []
+
+# 数据源注册表（供页面和日志展示来源名称）
+sources:
+  sina_daily:
+    enabled: true
+    priority: 1
+    label: "新浪财经 · 期货日K接口"
+    note: "免费公开、无需密钥；提供主力连续日K与历史，作为收盘行情与历史来源"
+  bmd_official:
+    enabled: false
+    priority: 2
+    label: "BMD 官方（待验证）"
+    note: "官方免费自动采集方式尚未验证；启用前必须人工确认合规性与稳定性"
