@@ -1,8 +1,8 @@
 {
   "schema_version": "1.0",
-  "dashboard_generated_at": "2026-10-19T16:38:07+08:00",
-  "actual_collected_at": "2026-10-19T16:38:01+08:00",
-  "trade_date": "2026-10-19",
+  "dashboard_generated_at": "2026-10-20T09:32:25+08:00",
+  "actual_collected_at": "2026-10-20T09:32:19+08:00",
+  "trade_date": "2026-10-20",
   "market_status": "采集异常",
   "abnormal_items": [
     "DCE 棕榈油 P 采集异常且无历史有效数据",
