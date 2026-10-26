@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
-  "dashboard_generated_at": "2026-10-26T09:40:48+08:00",
-  "actual_collected_at": "2026-10-26T09:40:43+08:00",
+  "dashboard_generated_at": "2026-10-26T16:43:06+08:00",
+  "actual_collected_at": "2026-10-26T16:42:58+08:00",
   "trade_date": "2026-10-26",
   "market_status": "采集异常",
   "abnormal_items": [
