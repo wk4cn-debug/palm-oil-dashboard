@@ -1,7 +1,7 @@
 {
   "schema_version": "1.0",
-  "dashboard_generated_at": "2026-11-11T09:56:06+08:00",
-  "actual_collected_at": "2026-11-11T09:56:01+08:00",
+  "dashboard_generated_at": "2026-11-11T16:54:05+08:00",
+  "actual_collected_at": "2026-11-11T16:53:34+08:00",
   "trade_date": "2026-11-11",
   "market_status": "采集异常",
   "abnormal_items": [
@@ -80,7 +80,7 @@
       "quote_time": null,
       "trade_date": null,
       "source": null,
-      "source_note": "首次采集失败：新浪日K获取失败 symbol=Y0: None",
+      "source_note": "首次采集失败：新浪日K获取失败 symbol=Y0: HTTPSConnectionPool(host='stock2.finance.sina.com.cn', port=443): Read timed out. (read timeout=25)",
       "status": "采集异常",
       "history": [],
       "future_contracts": [
